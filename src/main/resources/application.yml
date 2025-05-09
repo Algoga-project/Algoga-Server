@@ -1,0 +1,43 @@
+## application.yml
+spring:
+  thymeleaf:
+    suffix: .html
+    prefix: classpath:/templates/
+  datasource:
+    url: jdbc:mysql://localhost:3306/Algoga?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: algoga
+    password: algoga1234!!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10  # 커넥션 풀 크기
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        default_batch_fetch_size: 100 #최적화 옵션
+        show_sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+server:
+  port: 8080
+  tomcat:
+    max-swallow-size: 20485760
+    max-http-form-post-size: 20485760
+analysis:
+  api:
+    url: http://localhost:8000
+
+logging.level:
+  org.hibernate.SQL: trace
+
+gemini:
+  api:
+    key: "AIzaSyDnTZl-CtaS4lTpn1LjUNJ9EVTx5F84Ras"
