@@ -33,7 +33,7 @@ server:
     max-http-form-post-size: 20485760
 analysis:
   api:
-    url: http://localhost:8000
+    url: http://localhost:9000
 
 logging.level:
   org.hibernate.SQL: trace
@@ -41,3 +41,4 @@ logging.level:
 gemini:
   api:
     key: "AIzaSyDnTZl-CtaS4lTpn1LjUNJ9EVTx5F84Ras"
+
