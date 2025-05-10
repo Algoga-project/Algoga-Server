@@ -29,9 +29,8 @@ public class Member {
     @Column(name = "birth")
     private LocalDate birth;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "disease")
-    private Disease disease;
+    private String disease;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "country")

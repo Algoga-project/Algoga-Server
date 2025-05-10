@@ -1,7 +1,6 @@
 package Algoga.server.domain.member.dto;
 
 import Algoga.server.domain.member.Country;
-import Algoga.server.domain.member.Disease;
 import Algoga.server.domain.member.Gender;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -18,9 +17,7 @@ public class MemberJoinDto {
     private String name;
     private LocalDate birth;
     private String medications;
-
-    @Enumerated(EnumType.STRING)
-    private Disease disease;
+    private String disease;
 
     @Enumerated(EnumType.STRING)
     private Country country;
