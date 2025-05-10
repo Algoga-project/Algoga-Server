@@ -1,7 +1,6 @@
 package Algoga.server.global.controller;
 
 import Algoga.server.domain.member.Country;
-import Algoga.server.domain.member.Disease;
 import Algoga.server.domain.member.Gender;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,18 +30,12 @@ public class HomeController {
                 .map(Enum::name)
                 .collect(Collectors.toList());
 
-        // Disease enum 값들을 문자열 리스트로 변환
-        List<String> diseases = Arrays.stream(Disease.values())
-                .map(Enum::name)
-                .collect(Collectors.toList());
-
         // Country enum 값들을 문자열 리스트로 변환
         List<String> countries = Arrays.stream(Country.values())
                 .map(Enum::name)
                 .collect(Collectors.toList());
 
         formData.put("genders", genders);
-        formData.put("diseases", diseases);
         formData.put("countries", countries);
 
         return formData;
