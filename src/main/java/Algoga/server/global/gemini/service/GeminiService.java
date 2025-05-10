@@ -1,8 +1,13 @@
 package Algoga.server.global.gemini.service;
 
+import Algoga.server.domain.member.Member;
 import Algoga.server.domain.member.dto.MemberJoinDto;
+import Algoga.server.domain.member.service.MemberService;
 import Algoga.server.global.gemini.prompt.PromptBase;
+import Algoga.server.global.gemini.service.dto.FoodAnalysisDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,17 +20,23 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class GeminiService {
+    private final ObjectMapper objectMapper;
     @Value("${gemini.api.key}")
     private String apiKey;
 
+    private final MemberService memberService;
+
     private static final String MODEL_NAME = "gemini-1.5-flash-latest";
 
-    public String getHealthTravelConsult(HttpSession session, String destination) throws IOException {
-        // 프롬프트 준비
-        String prompt = PromptBase.getHealthTravelConsultPrompt(session, destination);
+    public String getHealthTravelConsult(HttpSession session, String destination, Long memberId) throws IOException {
+
+        Member member = memberService.getMemberById(memberId);
+        String prompt = PromptBase.getHealthTravelConsultPrompt(session, destination, member);
 
         // API 요청 URL 생성
         String urlString = "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -102,9 +113,9 @@ public class GeminiService {
     }
 
 
-    public String getDrugAnalyze(HttpSession session, String destination) throws IOException {
-        // 프롬프트 준비
-        String prompt = PromptBase.getDrugInfoPrompt(session, destination);
+    public String getDrugAnalyze(HttpSession session, String destination, Long memberId) throws IOException {
+        Member member = memberService.getMemberById(memberId);
+        String prompt = PromptBase.getDrugInfoPrompt(session, destination, member);
 
         // API 요청 URL 생성
         String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + apiKey;
@@ -186,23 +197,19 @@ public class GeminiService {
     }
 
 
-    public String getFoodAnalyze(HttpSession session, MultipartFile imageFile) throws IOException {
-        // prompt ready
-        String prompt = PromptBase.getImageAnalyzePrompt(session);
+    public FoodAnalysisDto getFoodAnalyze(HttpSession session, MultipartFile imageFile, Long memberId) throws IOException {
+        Member member = memberService.getMemberById(memberId);
+        String prompt = PromptBase.getImageAnalyzePrompt(session, member);
 
-        // API request URL generate (공백 제거)
+        // API request URL generate
         String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + apiKey;
         urlString = urlString.replaceAll("\\s+", ""); // URL에서 공백 제거
 
         try {
-            // 디버깅 정보 출력
-            System.out.println("URL: " + urlString);
-
             // 이미지 크기 체크
             long imageSize = imageFile.getSize();
-            System.out.println("Image size: " + imageSize + " bytes");
-            if (imageSize > 20 * 1024 * 1024) { // 20MB 제한
-                return "Error: Image size exceeds API limits (max 20MB)";
+            if (imageSize > 15 * 1024 * 1024) {
+                throw new IllegalArgumentException("Error: Image size exceeds API limits (max 15MB)");
             }
 
             // HTTP 연결 준비
@@ -212,92 +219,89 @@ public class GeminiService {
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.setDoOutput(true);
 
+            // 이미지 MIME 타입 가져오기
+            String mimeType = imageFile.getContentType();
+            if (mimeType == null) {
+                mimeType = "image/jpeg"; // 기본값 설정
+            }
+
             // 이미지 Base64 인코딩
             String base64Img = Base64.getEncoder().encodeToString(imageFile.getBytes());
 
-            // 프롬프트 이스케이프 처리 개선
-            String safePrompt = prompt.replace("\\", "\\\\")
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("\"", "\\\"")
-                    .replace("\t", "\\t");
+            // JSON 요청 구성
+            JSONObject jsonRequest = new JSONObject();
+            JSONArray contents = new JSONArray();
+            JSONObject userContent = new JSONObject();
+            userContent.put("role", "user");
 
-            // JSON 요청 구성 - Gemini API 형식에 맞게 수정
-            String jsonInputString = String.format(
-                    "{\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"%s\"},{\"inline_data\":{\"mime_type\":\"image/jpeg\",\"data\":\"%s\"}}]}]}",
-                    safePrompt, base64Img
-            );
+            JSONArray contentParts = new JSONArray();
+            JSONObject textPart = new JSONObject();
+            textPart.put("text", prompt);
+            contentParts.put(textPart);
 
-            // 디버깅 - 요청 내용 일부 출력 (이미지는 너무 길어서 제외)
-            System.out.println("Request JSON (partial): " +
-                    jsonInputString.substring(0, Math.min(500, jsonInputString.length())) + "...");
+            JSONObject imagePart = new JSONObject();
+            JSONObject inlineData = new JSONObject();
+            inlineData.put("mime_type", mimeType);
+            inlineData.put("data", base64Img);
+            imagePart.put("inline_data", inlineData);
+            contentParts.put(imagePart);
+
+            userContent.put("parts", contentParts);
+            contents.put(userContent);
+            jsonRequest.put("contents", contents);
 
             // 요청 전송
             try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                byte[] input = jsonRequest.toString().getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
             }
 
-            // 응답 상태 코드 확인
             int responseCode = conn.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
+            InputStream responseStream = (responseCode >= 200 && responseCode < 300)
+                    ? conn.getInputStream()
+                    : conn.getErrorStream();
 
-            // 오류 응답 처리
-            if (responseCode != 200) {
-                // 오류 메시지 읽기
-                StringBuilder errorResponse = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8))) {
-                    String responseLine;
-                    while ((responseLine = br.readLine()) != null) {
-                        errorResponse.append(responseLine.trim());
-                    }
-                }
-                System.out.println("Error Response: " + errorResponse.toString());
-                return "API Error: " + responseCode + " - " + errorResponse.toString();
-            }
-
-            // 성공 응답 처리
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                StringBuilder response = new StringBuilder();
-                String responseLine;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-
-                // 응답 파싱
-                String responseStr = response.toString();
-                System.out.println("Response (partial): " +
-                        responseStr.substring(0, Math.min(500, responseStr.length())) + "...");
-
-                JSONObject jsonResponse = new JSONObject(responseStr);
-                if (jsonResponse.has("candidates")) {
-                    JSONArray candidates = jsonResponse.getJSONArray("candidates");
-                    StringBuilder message = new StringBuilder();
-                    for (int i = 0; i < candidates.length(); i++) {
-                        JSONObject candidate = candidates.getJSONObject(i);
-                        if (candidate.has("content")) {
-                            JSONObject content = candidate.getJSONObject("content");
-                            if (content.has("parts")) {
-                                JSONArray parts = content.getJSONArray("parts");
-                                for (int j = 0; j < parts.length(); j++) {
-                                    JSONObject part = parts.getJSONObject(j);
-                                    if (part.has("text")) {
-                                        message.append(part.getString("text")).append("\n");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    return message.toString().trim();
-                } else {
-                    return "No data analysis results found in response.";
+            // 응답 읽기
+            StringBuilder response = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(responseStream, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    response.append(line.trim());
                 }
             }
+
+            // 에러 응답 처리
+            if (responseCode >= 400) {
+                System.err.println("API Error Response: " + response);
+                throw new RuntimeException("Error analyzing food data: HTTP " + responseCode + " - " + response);
+            }
+
+            // JSON 응답 파싱
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            if (jsonResponse.has("candidates")) {
+                JSONArray candidates = jsonResponse.getJSONArray("candidates");
+                for (int i = 0; i < candidates.length(); i++) {
+                    JSONObject content = candidates.getJSONObject(i).getJSONObject("content");
+                    JSONArray parts = content.getJSONArray("parts");
+                    for (int j = 0; j < parts.length(); j++) {
+                        String rawText = parts.getJSONObject(j).getString("text");
+                        String cleanedJson = rawText
+                                .replaceFirst("(?s)^```json\\s*", "")
+                                .replaceFirst("(?s)^```\\s*", "")
+                                .replaceFirst("(?s)\\s*```$", "")
+                                .trim();
+                        return objectMapper.readValue(cleanedJson, FoodAnalysisDto.class);
+                    }
+                }
+            }
+
+            // 결과가 없는 경우
+            return new FoodAnalysisDto("Unknown", "unknown", List.of("no_data"), "No analysis results found.");
+
         } catch (Exception e) {
             e.printStackTrace();
-            return "Error analyzing data: " + e.getMessage();
+            throw new RuntimeException("Error analyzing data: " + e.getMessage());
         }
     }
+
 }

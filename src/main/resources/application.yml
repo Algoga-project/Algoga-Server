@@ -13,7 +13,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
@@ -27,6 +27,11 @@ spring:
       max-request-size: 20MB
 
 server:
+  servlet:
+    session:
+      cookie:
+        same-site: none
+        secure: false
   port: 8080
   tomcat:
     max-swallow-size: 20485760

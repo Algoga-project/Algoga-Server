@@ -1,15 +1,17 @@
 package Algoga.server.global.gemini.prompt;
 
+import Algoga.server.domain.member.Member;
 import Algoga.server.domain.member.dto.MemberJoinDto;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.Period;
 
 public class PromptBase {
 
-    public static String getHealthTravelConsultPrompt(HttpSession session, String destination) {
-        MemberJoinDto member = (MemberJoinDto) session.getAttribute("member");
+    public static String getHealthTravelConsultPrompt(HttpSession session, String destination, Member member) {
+//        MemberJoinDto member = (MemberJoinDto) session.getAttribute("member");
         StringBuilder prompt = new StringBuilder();
 
         prompt.append("**Role:** 만성 소화계 질환 여행자를 위한 전문 건강 및 여행 컨설턴트\n\n")
@@ -82,40 +84,34 @@ public class PromptBase {
         return prompt.toString();
     }
 
-
-
-    public static String getImageAnalyzePrompt(HttpSession session) {
-        MemberJoinDto member = (MemberJoinDto) session.getAttribute("member");
+    public static String getImageAnalyzePrompt(HttpSession session, Member member) {
         int age = Period.between(member.getBirth(), LocalDate.now()).getYears();
         StringBuilder prompt = new StringBuilder();
 
-        prompt.append("Role: Chronic GI Traveler Food Risk Analyzer\n")
-                .append("User: {")
-                .append("\"age\":").append(age).append(",")
-                .append("\"gender\":\"").append(member.getGender()).append("\",")
-                .append("\"condition\":\"").append(member.getDisease()).append("\",")
-                .append("\"medications\":\"").append(member.getMedications()).append("\"")
-                .append("}\n\n")
-                .append("Request: Analyze the attached food image for a traveler with chronic digestive disease. Identify:\n")
-                .append("1) foodName\n")
-                .append("2) riskLevel (low, medium, high)\n")
-                .append("3) keywords (e.g. high_irritant, high_sodium)\n")
-                .append("4) conclusion (why it's unsuitable)\n\n")
-                .append("Output JSON only, e.g.:\n")
-                .append("{\n")
-                .append("  \"foodName\":\"...\",\n")
-                .append("  \"riskLevel\":\"...\",\n")
-                .append("  \"keywords\":[\"...\",\"...\"],\n")
-                .append("  \"conclusion\":\"...\"\n")
-                .append("}");
+        // 역할과 사용자 정보
+        prompt.append("역할: 만성 소화기 질환 여행자 음식 위험 분석기\n");
+        prompt.append("사용자: {")
+                .append("\"age\": ").append(age).append(", ")
+                .append("\"gender\": \"").append(member.getGender()).append("\", ")
+                .append("\"condition\": \"").append(member.getDisease()).append("\", ")
+                .append("\"medications\": \"").append(member.getMedications()).append("\"")
+                .append("}\n\n");
+
+        // 요청사항: 이미지 데이터 없이 분석 결과만 JSON으로 출력
+        prompt.append("요청: 첨부된 음식 사진을 분석하여 아래 항목들을 JSON 형식으로 출력하세요. \n");
+        prompt.append("1) foodName\n");
+        prompt.append("2) riskLevel (low, medium, high)\n");
+        prompt.append("3) keywords (예: high_irritant, high_sodium)\n");
+        prompt.append("4) conclusion (부적합한 이유 간단히)\n\n");
 
         return prompt.toString();
     }
 
 
 
-    public static String getDrugInfoPrompt(HttpSession session, String destination) {
-        MemberJoinDto member = (MemberJoinDto) session.getAttribute("member");
+
+    public static String getDrugInfoPrompt(HttpSession session, String destination, Member member) {
+//        MemberJoinDto member = (MemberJoinDto) session.getAttribute("member");
         StringBuilder prompt = new StringBuilder();
 
         prompt.append("**Role:** Global Drug Information Expert\n\n")
