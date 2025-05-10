@@ -23,6 +23,85 @@ public class GeminiService {
 
     private static final String MODEL_NAME = "gemini-1.5-flash-latest";
 
+    public String getHealthTravelConsult(HttpSession session, String destination) throws IOException {
+        // 프롬프트 준비
+        String prompt = PromptBase.getHealthTravelConsultPrompt(session, destination);
+
+        // API 요청 URL 생성
+        String urlString = "https://generativelanguage.googleapis.com/v1beta/models/"
+                + MODEL_NAME
+                + ":generateContent?key="
+                + apiKey;
+        URL url;
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        // HTTP 연결 설정
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+
+        // 요청 본문(JSON) 준비 및 전송
+        // 문자열 이스케이핑 처리 개선
+        String escapedPrompt = prompt
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+
+        String jsonInputString = "{\"contents\":[{\"parts\":[{\"text\":\"" + escapedPrompt + "\"}]}]}";
+
+        try (OutputStream os = conn.getOutputStream()) {
+            byte[] input = jsonInputString.getBytes("utf-8");
+            os.write(input, 0, input.length);
+        }
+
+        // 서버 응답 읽기
+        int responseCode = conn.getResponseCode();
+        InputStream inputStream = (responseCode >= 200 && responseCode < 300)
+                ? conn.getInputStream()
+                : conn.getErrorStream();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, "utf-8"))) {
+            StringBuilder response = new StringBuilder();
+            String responseLine;
+            while ((responseLine = br.readLine()) != null) {
+                response.append(responseLine.trim());
+            }
+
+            if (responseCode >= 400) {
+                System.err.println("API Error Response: " + response.toString());
+                return "Error during health-travel consult: HTTP " + responseCode + " - " + response.toString();
+            }
+
+            // JSON 응답 파싱
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            if (jsonResponse.has("candidates")) {
+                JSONArray candidates = jsonResponse.getJSONArray("candidates");
+                StringBuilder message = new StringBuilder();
+                for (int i = 0; i < candidates.length(); i++) {
+                    JSONObject content = candidates.getJSONObject(i).getJSONObject("content");
+                    JSONArray parts = content.getJSONArray("parts");
+                    for (int j = 0; j < parts.length(); j++) {
+                        message.append(parts.getJSONObject(j).getString("text")).append("\n");
+                    }
+                }
+                return message.toString().trim();
+            } else {
+                return "No travel-health consult results found.";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error during health-travel consult: " + e.getMessage();
+        }
+    }
+
+
     public String getDrugAnalyze(HttpSession session, String destination) throws IOException {
         // 프롬프트 준비
         String prompt = PromptBase.getDrugInfoPrompt(session, destination);
@@ -218,76 +297,6 @@ public class GeminiService {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return "Error analyzing data: " + e.getMessage();
-        }
-    }
-
-
-    public String getPreemptiveGuide(HttpSession session) throws IOException {
-        // prompt ready
-        String prompt = PromptBase.getPreemptivePrompt(session);
-
-        // API request URL generate
-        String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + apiKey;
-        URL url = null;
-        try {
-            url = new URL(urlString);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-
-        // HTTP connection setting
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-
-        // 요청 본문(JSON) 준비 및 전송
-        String jsonInputString = String.format(
-                "{\"contents\": [{\"parts\": [{\"text\": \"%s\"}]}]}",
-                prompt.replace("\n", "\\n")
-        );
-
-        //서버로 데이터 전송하는 출력 스트림 가져오기
-        //위에서 만든 JsonInputString 바이트 형식으로 input에 저장후
-        //이를 os에 기록
-        try (OutputStream os = conn.getOutputStream()) {
-            byte[] input = jsonInputString.getBytes("utf-8");
-            //바이트 배열을 서버로 전송
-            os.write(input, 0, input.length);
-        }
-
-        //서버로부터 응답 읽기 및 데이터 파싱
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-            StringBuilder response = new StringBuilder();
-            String responseLine;
-            //응답 한 줄씩 읽어서 response에 추가
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
-            }
-
-            //StringBuilder 객체를 jsonResponse로 파싱
-            JSONObject jsonResponse = new JSONObject(response.toString());
-            //gemini 응답이 candidates 구조 안으로 전송되기 때문에 이를 확인
-            if (jsonResponse.has("candidates")) {
-                //candidates로부터 JSONArray 형식으로 받기
-                JSONArray candidates = jsonResponse.getJSONArray("candidates");
-                StringBuilder message = new StringBuilder();
-                for (int i = 0; i < candidates.length(); i++) {
-                    JSONObject content = candidates.getJSONObject(i).getJSONObject("content");
-                    JSONArray parts = content.getJSONArray("parts");
-                    //각 parts에서 text 필드 추출해서 StringBuilder 부분에 추가
-                    for (int j = 0; j < parts.length(); j++) {
-                        message.append(parts.getJSONObject(j).getString("text")).append("\n");
-                    }
-                }
-                //이후 String으로 변환된 분석 결과 출력
-                System.out.println(message.toString().trim());
-                return message.toString().trim();
-            } else {
-                return "No data analysis results found.";
-            }
-        } catch (Exception e) {
             return "Error analyzing data: " + e.getMessage();
         }
     }
