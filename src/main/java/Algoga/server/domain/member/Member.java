@@ -55,5 +55,17 @@ public class Member {
         this.medications = memberJoinDto.getMedications();
         this.travelLocations = memberJoinDto.getTravelLocations();
     }
+
+    public void updateInfo(String name, LocalDate birth, Country country, Gender gender,
+                           String medications, String travelLocations, String disease) {
+        this.name = name;
+        this.birth = birth;
+        this.country = country;
+        this.gender = gender;
+        this.medications = medications;
+        this.travelLocations = travelLocations;
+        this.disease = disease;
+    }
+
 }
 

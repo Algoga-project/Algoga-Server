@@ -36,7 +36,7 @@ public class GeminiService {
     public String getHealthTravelConsult(HttpSession session, String destination, Long memberId) throws IOException {
 
         Member member = memberService.getMemberById(memberId);
-        String prompt = PromptBase.getHealthTravelConsultPrompt(destination, member);
+        String prompt = PromptBase.getImprovedHealthTravelConsultPrompt(destination, member);
 
         // API 요청 URL 생성
         String urlString = "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -87,7 +87,7 @@ public class GeminiService {
 
             if (responseCode >= 400) {
                 System.err.println("API Error Response: " + response.toString());
-                return "Error during health-travel consult: HTTP " + responseCode + " - " + response.toString();
+                throw new RuntimeException("Error during health-travel consult: HTTP " + responseCode + " - " + response.toString());
             }
 
             // JSON 응답 파싱
@@ -102,13 +102,16 @@ public class GeminiService {
                         message.append(parts.getJSONObject(j).getString("text")).append("\n");
                     }
                 }
-                return message.toString().trim();
+                // 마크다운 코드블록 제거
+                String raw = message.toString().trim();
+                String cleanJson = extractJsonFromMarkdown(raw);
+                return cleanJson;
             } else {
-                return "No travel-health consult results found.";
+                throw new RuntimeException("No travel-health consult results found.");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return "Error during health-travel consult: " + e.getMessage();
+            throw new RuntimeException("Error during health-travel consult: " + e.getMessage());
         }
     }
 
@@ -288,5 +291,30 @@ public class GeminiService {
             throw new RuntimeException("Error analyzing data: " + e.getMessage());
         }
     }
+
+    private String extractJsonFromMarkdown(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return "";
+        }
+
+        String cleaned = raw.trim();
+
+        // ```json ... ``` 패턴 확인
+        if (cleaned.startsWith("```json")) {
+            cleaned = cleaned.substring("```json".length());
+        }
+        // ``` ... ``` 패턴 확인
+        else if (cleaned.startsWith("```")) {
+            cleaned = cleaned.substring("```".length());
+        }
+
+        // 끝부분의 ``` 제거
+        if (cleaned.endsWith("```")) {
+            cleaned = cleaned.substring(0, cleaned.length() - "```".length());
+        }
+
+        return cleaned.trim();
+    }
+
 
 }
