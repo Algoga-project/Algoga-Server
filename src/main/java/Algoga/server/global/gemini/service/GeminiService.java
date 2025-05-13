@@ -36,7 +36,7 @@ public class GeminiService {
     public String getHealthTravelConsult(HttpSession session, String destination, Long memberId) throws IOException {
 
         Member member = memberService.getMemberById(memberId);
-        String prompt = PromptBase.getHealthTravelConsultPrompt(session, destination, member);
+        String prompt = PromptBase.getHealthTravelConsultPrompt(destination, member);
 
         // API 요청 URL 생성
         String urlString = "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -115,16 +115,11 @@ public class GeminiService {
 
     public String getDrugAnalyze(HttpSession session, String destination, Long memberId) throws IOException {
         Member member = memberService.getMemberById(memberId);
-        String prompt = PromptBase.getDrugInfoPrompt(session, destination, member);
+        String prompt = PromptBase.getDrugInfoPrompt(destination, member);
 
         // API 요청 URL 생성
         String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + apiKey;
-        URL url = null;
-        try {
-            url = new URL(urlString);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
+        URL url = new URL(urlString);
 
         // HTTP 연결 설정
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -133,16 +128,12 @@ public class GeminiService {
         conn.setDoOutput(true);
 
         // 요청 본문(JSON) 준비 및 전송
-        // 문자열 이스케이핑 처리 개선
         String escapedPrompt = prompt.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
-
         String jsonInputString = "{\"contents\":[{\"parts\":[{\"text\":\"" + escapedPrompt + "\"}]}]}";
-
-        // 서버로 데이터 전송
         try (OutputStream os = conn.getOutputStream()) {
             byte[] input = jsonInputString.getBytes("utf-8");
             os.write(input, 0, input.length);
@@ -150,16 +141,8 @@ public class GeminiService {
 
         // 서버 응답 읽기
         int responseCode = conn.getResponseCode();
+        InputStream inputStream = (responseCode >= 200 && responseCode < 300) ? conn.getInputStream() : conn.getErrorStream();
 
-        // 응답 코드에 따라 적절한 스트림 선택
-        InputStream inputStream;
-        if (responseCode >= 200 && responseCode < 300) {
-            inputStream = conn.getInputStream();
-        } else {
-            inputStream = conn.getErrorStream();
-        }
-
-        // 응답 데이터 파싱
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, "utf-8"))) {
             StringBuilder response = new StringBuilder();
             String responseLine;
@@ -167,7 +150,6 @@ public class GeminiService {
                 response.append(responseLine.trim());
             }
 
-            // 에러 응답 처리
             if (responseCode >= 400) {
                 System.err.println("API Error Response: " + response.toString());
                 return "Error analyzing drug data: HTTP " + responseCode + " - " + response.toString();
@@ -177,19 +159,22 @@ public class GeminiService {
             JSONObject jsonResponse = new JSONObject(response.toString());
             if (jsonResponse.has("candidates")) {
                 JSONArray candidates = jsonResponse.getJSONArray("candidates");
-                StringBuilder message = new StringBuilder();
                 for (int i = 0; i < candidates.length(); i++) {
                     JSONObject content = candidates.getJSONObject(i).getJSONObject("content");
                     JSONArray parts = content.getJSONArray("parts");
                     for (int j = 0; j < parts.length(); j++) {
-                        message.append(parts.getJSONObject(j).getString("text")).append("\n");
+                        String rawText = parts.getJSONObject(j).getString("text");
+                        // 마크다운 코드블록 제거
+                        String cleanedJson = rawText
+                                .replaceFirst("(?s)^```json\\s*", "")
+                                .replaceFirst("(?s)^```\\s*", "")
+                                .replaceFirst("(?s)\\s*```$", "")
+                                .trim();
+                        return cleanedJson;
                     }
                 }
-                // 최종 결과 반환
-                return message.toString().trim();
-            } else {
-                return "No drug analysis results found.";
             }
+            return "No drug analysis results found.";
         } catch (Exception e) {
             e.printStackTrace();
             return "Error analyzing drug data: " + e.getMessage();
@@ -199,7 +184,7 @@ public class GeminiService {
 
     public FoodAnalysisDto getFoodAnalyze(HttpSession session, MultipartFile imageFile, Long memberId) throws IOException {
         Member member = memberService.getMemberById(memberId);
-        String prompt = PromptBase.getImageAnalyzePrompt(session, member);
+        String prompt = PromptBase.getImageAnalyzePrompt(member);
 
         // API request URL generate
         String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + apiKey;

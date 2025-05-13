@@ -10,7 +10,7 @@ import java.time.Period;
 
 public class PromptBase {
 
-    public static String getHealthTravelConsultPrompt(HttpSession session, String destination, Member member) {
+    public static String getHealthTravelConsultPrompt(String destination, Member member) {
 //        MemberJoinDto member = (MemberJoinDto) session.getAttribute("member");
         StringBuilder prompt = new StringBuilder();
 
@@ -84,7 +84,7 @@ public class PromptBase {
         return prompt.toString();
     }
 
-    public static String getImageAnalyzePrompt(HttpSession session, Member member) {
+    public static String getImageAnalyzePrompt(Member member) {
         int age = Period.between(member.getBirth(), LocalDate.now()).getYears();
         StringBuilder prompt = new StringBuilder();
 
@@ -108,10 +108,7 @@ public class PromptBase {
     }
 
 
-
-
-    public static String getDrugInfoPrompt(HttpSession session, String destination, Member member) {
-//        MemberJoinDto member = (MemberJoinDto) session.getAttribute("member");
+    public static String getDrugInfoPrompt(String destination, Member member) {
         StringBuilder prompt = new StringBuilder();
 
         prompt.append("**Role:** Global Drug Information Expert\n\n")
@@ -119,26 +116,55 @@ public class PromptBase {
                 .append("- Medications: ").append(member.getMedications()).append("\n")
                 .append("- Destination: ").append(destination).append("\n\n")
                 .append("**Analysis Request:**\n")
-                .append("Please provide basic information about the medications and local alternatives at the travel destination in JSON format.\n\n")
+                .append("Please generate a structured JSON response for medication details, local alternatives, and precautions.\n")
+                .append("You MUST fill in every field with the most accurate and complete information possible. ")
+                .append("If any information (such as dosage, usage, price) is not available, use a reliable estimate, common averages, or general guidelines based on typical use cases. ")
+                .append("If no specific data is available, clearly state '정보 없음' or 'N/A' only as a last resort.\n")
+
+                // 🔄 추가 요구사항 시작
+                .append("You have access to official Korean drug databases (e.g., KMLE, MFDS) and global sources (e.g., DrugBank). ")
+                .append("Search those databases for each medication in member.getMedications() and for local alternatives in the specified destination. ")
+                .append("If information like dosage, active ingredients, price, or usage is missing, fill in with common or average values typically found for similar medications. ")
+                .append("For example:\n")
+                .append("- Typical dosage for acetaminophen: 325~500mg per tablet\n")
+                .append("- Common price range for generic cold medicine: 500~1500 KRW per tablet\n")
+                .append("- Use general ingredient lists if exact formulation is unavailable\n")
+                .append("Price 정보는 반드시 KRW 단위로 표기하고, 1정(1 tablet) 또는 1갑(1 pack) 기준을 함께 제시하세요. ")
+                .append("절대 임의로 ‘정보 없음’이라고 하지 말고, 출처에 기록이 전혀 없을 때에만 사용하세요.\n")
+                // 🔄 추가 요구사항 끝
+
+                .append("NEVER use empty strings, and NEVER use generic phrases like 'This information varies ...'.\n")
+                .append("Search for and provide real medication names, ingredients, dosages, usages, and prices using trusted sources or common knowledge whenever possible.\n")
+                .append("Omit the image_url field for simplicity.\n\n")
                 .append("**Required Output Format:**\n")
                 .append("{\n")
-                .append("  \"drug_info\": [\n")
+                .append("  \"current_medication\": {\n")
+                .append("    \"name\": \"Medication Name\",\n")
+                .append("    \"active_ingredient\": \"Active Ingredient\",\n")
+                .append("    \"dosage\": \"Dosage Information\",\n")
+                .append("    \"usage\": \"Usage Information\"\n")
+                .append("  },\n")
+                .append("  \"alternative_medications\": [\n")
                 .append("    {\n")
-                .append("      \"name\": \"Drug Name\",\n")
+                .append("      \"name\": \"Alternative Name\",\n")
+                .append("      \"brand_name\": \"Brand Name\",\n")
                 .append("      \"active_ingredient\": \"Active Ingredient\",\n")
-                .append("      \"usage\": \"Drug Usage\"\n")
+                .append("      \"dosage\": \"Dosage Information\",\n")
+                .append("      \"price\": \"Price / Quantity (in KRW)\",\n")
+                .append("      \"match_percentage\": \"Similarity Percentage\"\n")
                 .append("    }\n")
                 .append("  ],\n")
-                .append("  \"local_alternatives\": [\n")
-                .append("    {\n")
-                .append("      \"name\": \"Alternative Drug Name\",\n")
-                .append("      \"active_ingredient\": \"Active Ingredient\",\n")
-                .append("      \"match_percentage\": \"Matching Percentage\",\n")
-                .append("      \"price\": \"Local Price\"\n")
-                .append("    }\n")
+                .append("  \"precautions\": [\n")
+                .append("    { \"message\": \"약품 성분이 완전히 동일하지 않을 수 있습니다.\" },\n")
+                .append("    { \"message\": \"용량과 복용법을 확인 후 사용하세요.\" },\n")
+                .append("    { \"message\": \"알레르기 반응이 있는 경우 의사와 상담하세요.\" }\n")
                 .append("  ]\n")
                 .append("}");
 
         return prompt.toString();
     }
+
+
+
+
 }

@@ -42,6 +42,8 @@ public class Member {
 
     private String medications;
 
+    private String travelLocations;
+
     public Member(MemberJoinDto memberJoinDto) {
         this.ID = memberJoinDto.getID();
         this.password = memberJoinDto.getPassword();
@@ -51,6 +53,7 @@ public class Member {
         this.country = memberJoinDto.getCountry();
         this.gender = memberJoinDto.getGender();
         this.medications = memberJoinDto.getMedications();
+        this.travelLocations = memberJoinDto.getTravelLocations();
     }
 }
 

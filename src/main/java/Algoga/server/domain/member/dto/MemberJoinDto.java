@@ -25,6 +25,8 @@ public class MemberJoinDto {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    private String travelLocations;
+
 
 
 }
