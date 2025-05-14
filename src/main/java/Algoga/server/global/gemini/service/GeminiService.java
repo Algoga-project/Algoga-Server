@@ -26,12 +26,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GeminiService {
     private final ObjectMapper objectMapper;
-    @Value("${gemini.api.key}")
-    private String apiKey;
 
     private final MemberService memberService;
 
-    private static final String MODEL_NAME = "gemini-1.5-flash-latest";
+    @Value("${gemini.api.key}")
+    private String apiKey;
+
+    @Value("${gemini.api.model-name}")
+    private String modelName;
+
 
     public String getHealthTravelConsult(HttpSession session, String destination, Long memberId) throws IOException {
 
@@ -40,7 +43,7 @@ public class GeminiService {
 
         // API 요청 URL 생성
         String urlString = "https://generativelanguage.googleapis.com/v1beta/models/"
-                + MODEL_NAME
+                + modelName
                 + ":generateContent?key="
                 + apiKey;
         URL url;
@@ -121,7 +124,7 @@ public class GeminiService {
         String prompt = PromptBase.getDrugInfoPrompt(destination, member);
 
         // API 요청 URL 생성
-        String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + apiKey;
+        String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
         URL url = new URL(urlString);
 
         // HTTP 연결 설정
@@ -190,7 +193,7 @@ public class GeminiService {
         String prompt = PromptBase.getImageAnalyzePrompt(member);
 
         // API request URL generate
-        String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + apiKey;
+        String urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
         urlString = urlString.replaceAll("\\s+", ""); // URL에서 공백 제거
 
         try {

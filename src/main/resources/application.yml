@@ -45,5 +45,7 @@ logging.level:
 
 gemini:
   api:
-    key: "AIzaSyDnTZl-CtaS4lTpn1LjUNJ9EVTx5F84Ras"
+    key: ${GEMINI_API_KEY}
+    model-name: ${GEMINI_MODEL_NAME}
+
 

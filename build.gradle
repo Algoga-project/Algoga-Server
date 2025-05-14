@@ -24,20 +24,31 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// Spring Boot Core Dependencies
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'    // JPA for database operations
+	implementation 'org.springframework.boot:spring-boot-starter-web'         // Web framework support
 
-	// Spring Boot Starter Thymeleaf 의존성
-	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	// Database Support
+	runtimeOnly 'com.mysql:mysql-connector-j'                                // MySQL database connector
 
-	//org.json 의존성
-	implementation 'org.json:json:20240303'
+	// Development Tools
+	compileOnly 'org.projectlombok:lombok'                                   // Reduces boilerplate code
+	annotationProcessor 'org.projectlombok:lombok'                           // Annotation processor for Lombok
+
+	// Testing Dependencies
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'    // Testing framework
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'             // JUnit platform support
+
+	// Environment Configuration
+	implementation 'me.paulschwarz:spring-dotenv:4.0.0'                      // Loads environment variables from .env file
+
+	// Template Engine
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'   // Thymeleaf template engine
+
+	// JSON Processing
+	implementation 'org.json:json:20240303'                                  // JSON manipulation library
 }
+
 
 tasks.named('test') {
 	useJUnitPlatform()

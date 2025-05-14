@@ -35,3 +35,18 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Sensitive Configuration Files ###
+.env
+src/main/resources/application-*.yml
+src/main/resources/application-*.properties
+src/main/resources/application.yml
+src/main/resources/application.properties
+src/main/resources/config/
+**/application-dev.yml
+**/application-prod.yml
+**/application-local.yml
+**/application-test.yml
+**/secrets.yml
+**/secrets.properties
+**/config/secrets/
