@@ -94,6 +94,7 @@ public class PromptBase {
                 .append("## ✅ 추가 요청 사항\n\n")
                 .append("- 사용자 개별 건강 상태와 여행지를 고려한 맞춤형 권장 사항 제공\n")
                 .append("- 각 항목에서 단순 지침이 아닌 AI 판단에 따른 구체적이고 퀄리티 있는 조언 포함\n")
+                .append("- 출력물은 전부 영어로 번역해주십시오.\n")
 
                 // JSON 형식으로 데이터 요청
                 .append("---\n\n")
@@ -131,6 +132,7 @@ public class PromptBase {
         prompt.append("2) riskLevel (low, medium, high)\n");
         prompt.append("3) keywords (예: high_irritant, high_sodium)\n");
         prompt.append("4) conclusion (부적합한 이유 간단히)\n\n");
+        prompt.append("추가 요청 사항 : 출력물은 전부 영어로 번역해주십시오.");
 
         return prompt.toString();
     }
@@ -159,6 +161,7 @@ public class PromptBase {
                 .append("- Use general ingredient lists if exact formulation is unavailable\n")
                 .append("Price 정보는 반드시 KRW 단위로 표기하고, 1정(1 tablet) 또는 1갑(1 pack) 기준을 함께 제시하세요. ")
                 .append("절대 임의로 ‘정보 없음’이라고 하지 말고, 출처에 기록이 전혀 없을 때에만 사용하세요.\n")
+                .append("출력물은 전부 영어로 번역해주십시오.\n")
                 // 🔄 추가 요구사항 끝
 
                 .append("NEVER use empty strings, and NEVER use generic phrases like 'This information varies ...'.\n")
