@@ -21,9 +21,8 @@ jobs:
 
 
       - name: Build with Gradle
-        working-directory: Algoga-Server/server
+        working-directory: server
         run: ./gradlew build
-
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
