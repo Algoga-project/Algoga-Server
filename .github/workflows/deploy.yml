@@ -21,7 +21,6 @@ jobs:
 
 
       - name: Build with Gradle
-        working-directory: server
         run: ./gradlew build
 
       - name: Deploy to Azure Web App
