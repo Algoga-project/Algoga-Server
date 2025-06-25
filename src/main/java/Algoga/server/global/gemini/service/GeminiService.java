@@ -1,6 +1,7 @@
 package Algoga.server.global.gemini.service;
 
 import Algoga.server.domain.member.Member;
+import Algoga.server.domain.member.dto.MemberJoinDto;
 import Algoga.server.domain.member.service.MemberService;
 import Algoga.server.global.gemini.prompt.PromptBase;
 import Algoga.server.global.gemini.service.dto.FoodAnalysisDto;

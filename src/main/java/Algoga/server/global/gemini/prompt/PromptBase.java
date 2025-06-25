@@ -161,7 +161,7 @@ public class PromptBase {
                 .append("- Use general ingredient lists if exact formulation is unavailable\n")
                 .append("Price 정보는 반드시 KRW 단위로 표기하고, 1정(1 tablet) 또는 1갑(1 pack) 기준을 함께 제시하세요. ")
                 .append("절대 임의로 ‘정보 없음’이라고 하지 말고, 출처에 기록이 전혀 없을 때에만 사용하세요.\n")
-                .append("출력물은 전부 영어로 번역해주십시오.\n")
+                .append("출력물은 전부 영어로 출력되게 해주십시오.\n")
                 // 🔄 추가 요구사항 끝
 
                 .append("NEVER use empty strings, and NEVER use generic phrases like 'This information varies ...'.\n")
@@ -177,11 +177,11 @@ public class PromptBase {
                 .append("  },\n")
                 .append("  \"alternative_medications\": [\n")
                 .append("    {\n")
-                .append("      \"name\": \"Alternative Name\",\n")
-                .append("      \"brand_name\": \"Brand Name\",\n")
+                .append("      \"name\": \"Alternative Name(영어로 작성하십시오)\",\n")
+                .append("      \"brand_name\": \"Brand Name(영어로 작성하십시오)\",\n")
                 .append("      \"active_ingredient\": \"Active Ingredient\",\n")
                 .append("      \"dosage\": \"Dosage Information\",\n")
-                .append("      \"price\": \"Price / Quantity (in KRW)\",\n")
+                .append("      \"price\": \"Price / Quantity (in KRW, 영어로 작성하십시오)\",\n")
                 .append("      \"match_percentage\": \"Similarity Percentage\"\n")
                 .append("    }\n")
                 .append("  ],\n")
