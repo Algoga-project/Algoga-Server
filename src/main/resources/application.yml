@@ -1,4 +1,3 @@
-## application.yml
 spring:
   thymeleaf:
     suffix: .html
@@ -45,7 +44,7 @@ logging.level:
 
 gemini:
   api:
-    key: ${GEMINI_API_KEY}
-    model-name: ${GEMINI_MODEL_NAME}
+    key: "AIzaSyDnTZl-CtaS4lTpn1LjUNJ9EVTx5F84Ras"
+    model-name: "gemini-1.5-flash-latest"
 
 
